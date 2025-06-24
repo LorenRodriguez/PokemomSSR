@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { map, Observable, tap } from 'rxjs';
+import { catchError, map, Observable, tap, throwError } from 'rxjs';
 import { Pokemon, PokemonAPIResponse, SimplePokemon } from '../interfaces';
 
 @Injectable({
@@ -41,10 +41,24 @@ export class PokemonService {
   }
 
   getPokemon(id: string): Observable<Pokemon> {
-    return this.http.get<Pokemon>(`${this.urlBase}/${id}`);
+    return this.http
+      .get<Pokemon>(`${this.urlBase}/${id}`)
+      .pipe(catchError(this.handleError));
   }
 
   private getOffset(page: number): number {
     return page * this.elementsPerPage();
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    if (error.status === 0) {
+      console.log('An error ocurred:', error.error);
+    } else {
+      console.log(`Bakend returned code ${error.status}, body:`, error.error);
+    }
+
+    const errorMessage = error.error ?? 'An error ocurred';
+
+    return throwError(() => new Error(errorMessage));
   }
 }
